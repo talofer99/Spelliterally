@@ -1,3 +1,11 @@
+/* Spelliterally - By Tal Ofer (talofer99@hotmail.com)
+ * The RFID spelling game, with web interface.
+ * RFID pinouts are in the RFID file
+ * secret.h contain your wifi info.
+ * you will need the SPIF upload tool and to define a SPIFF that will enought to uploade the files in the /data folder
+*/
+
+
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
@@ -17,20 +25,12 @@ byte systemState;
 #include "wordList.h"
 #include "WS.h"
 
-
 const char* host = "kesem";
 const char ssid[] = SECRET_SSID;   // your network SSID (name)
 const char password[] = SECRET_PASS;   // your network password
 
 ESP8266WebServer server(80); //Server on port 80
 ESP8266HTTPUpdateServer httpUpdater;
-
-#define LED 2  //On board LED
-
-
-
-
-
 
 
 
@@ -43,18 +43,17 @@ unsigned long systemStateMillis;
 void setup(void) {
   Serial.begin(115200);
 
-  WiFi.begin(ssid, password);     //Connect to your WiFi router
-  Serial.println("");
-
-  //Onboard LED port Direction output
-  pinMode(LED, OUTPUT);
+  //Connect to your WiFi router
+  WiFi.begin(ssid, password);     
+  Serial.print("Connecting");
 
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
+  Serial.println("Done");
+  
   //Initialize File System
   if (SPIFFS.begin())  {
     Serial.println("SPIFFS Initialize....ok");
@@ -77,10 +76,8 @@ void setup(void) {
   server.serveStatic("/css", SPIFFS, "/css");
   server.serveStatic("/js", SPIFFS, "/js");
   
-
   server.begin();                  //Start server
   Serial.println("HTTP server started");
-
 
   if (MDNS.begin(host)) {
     MDNS.addService("http", "tcp", 80);
@@ -93,7 +90,6 @@ void setup(void) {
   // setup rfid pins
   setup_rfid_pins();
   setup_rfid();
-
 
   //setting up word list
   setUpWordList();
@@ -135,7 +131,6 @@ void loop(void) {
   } //end switch
 
 } //end loop
-
 
 
 //==============================================================
