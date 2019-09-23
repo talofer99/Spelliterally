@@ -13,15 +13,21 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266mDNS.h>
 #include "secrets.h"
-#include <FS.h>   //Include File System Headers
-#include "RFID.h"
 
 #define SSWaitForPlayer 0
 #define SSWaitForAnswer 1
 #define SSWaitForSolve 2
 #define SSSolved 3
 byte systemState;
+unsigned long systemStateMillis;
 
+#define MAX_RFIDCARDS 50
+char letters[MAX_RFIDCARDS];
+byte letters_id[MAX_RFIDCARDS][4];
+byte lettersArrayActualSize;
+
+#include <FS.h>   //Include File System Headers
+#include "RFID.h"
 #include "wordList.h"
 #include "WS.h"
 
@@ -33,9 +39,6 @@ ESP8266WebServer server(80); //Server on port 80
 ESP8266HTTPUpdateServer httpUpdater;
 
 
-
-unsigned long systemStateMillis;
-//byte currentSelectedWordIndex;
 
 //==============================================================
 //                  SETUP
@@ -91,6 +94,9 @@ void setup(void) {
   setup_rfid_pins();
   setup_rfid();
 
+  // setup letter list 
+  setUpLetterList();
+  
   //setting up word list
   setUpWordList();
 

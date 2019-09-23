@@ -19,26 +19,6 @@ byte ssPins[] = {SS_5_PIN, SS_4_PIN, SS_3_PIN, SS_2_PIN, SS_1_PIN};
 
 MFRC522 mfrc522[NR_OF_READERS];   // Create MFRC522 instance.
 
-char letters[] = {'A', 'B', 'C', 'G', 'T', 'E', 'R', 'O', 'N', 'P', 'D', 'S', 'I', 'F'};
-byte letters_id[][4] = {
-  {0x37, 0xBE, 0xD0, 0x52},
-  {0x8A, 0xB6, 0x98, 0x1A},
-  {0x7A, 0x0F, 0xC3, 0x19},
-  {0x19, 0x85, 0xFD, 0x8E},
-  {0xBA, 0x46, 0xA0, 0x1A},
-  {0x17, 0x67, 0x4A, 0x33},
-  {0xA9, 0x0E, 0x48, 0x5A},
-  {0x17, 0x8A, 0x4E, 0x34},
-  {0xA7, 0x2A, 0x3F, 0x33},
-  {0x99, 0x29, 0x67, 0x59},
-  {0xAC, 0xDC, 0x08, 0x3B},
-  {0x53, 0x27, 0x12, 0x2B},
-  {0x7B, 0xB7, 0x09, 0x3B},
-  {0x64, 0xAB, 0x09, 0x3B}
-};
-
-//
-
 
 char answer[NR_OF_READERS];
 char question[NR_OF_READERS];
@@ -83,7 +63,7 @@ void setNewQuestion(String newWord) {
 char  checkLetter(byte * buffer, byte bufferSize, byte rederID) {
   char returnValue = 0;
   byte match;
-  for (byte letterCode = 0; letterCode < sizeof(letters); letterCode++) {
+  for (byte letterCode = 0; letterCode < sizeof(letters); letterCode++) { //lettersArrayActualSize
     match = 0;
     for (byte i = 0; i < bufferSize; i++) {
       if (letters_id[letterCode][i] == buffer[i])
