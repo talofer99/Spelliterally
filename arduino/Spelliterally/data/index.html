@@ -18,13 +18,20 @@
 <div id="output" style="display: float:left; width: 100%;"></div>
 
 
+<audio preload="auto" id="goodJobSound">
+  <source src="img/goodjob.mp3" type="audio/mpeg">
+  Your browser does not support the audio tag.
+</audio>
+
+
 
 <script>
 	var system_state=-1; //so if the game board state is ZERO it will show start new game
-	var currentA = "";
-	var currentQ = "";
-	var lastA = "";
-	var lastQ = "";
+	var currentA = '';
+	var currentQ = '';
+	var lastA = '';
+	var lastQ = '';
+	
 	
 	
 	// ********************************************************
@@ -36,39 +43,25 @@
 			case 0:
 				console.log("NEW - waiting for player");
 				document.getElementById("image").innerHTML = 'LOADING .....';
-				getNewWord();
 				break;
 			case 1:
 				document.getElementById("output").innerHTML = '';
 				console.log("IN GAME");
-				// only do if its not startup (since the get new word does the same)
-				if (system_state !=0) {
-					document.getElementById("image").innerHTML = 'LOADING .....';
-					document.getElementById("answer").innerHTML = '';
-					console.log("Get Word Data");
-					stop_interval();
-					getWordData();
-				}
 				break;
 			case 3:
 				console.log("WINNER");
+				//var audio = new Audio('img/goodjob.mp3');
+				//audio.play();
+				var vid = document.getElementById("goodJobSound");
+				vid.play();
 				document.getElementById("output").innerHTML = '<h1>GOOD JOB <BR>NOW REMOVE ALL CARDS!</h1>'
 				break;
 		} //end switch
-		system_state=newSystemState;
+		
+		// set new state
+		system_state = newSystemState;
 	} //end function
 	
-	// ********************************************************
-	//  FUNCTION PARSE IMAGE INFO
-	// ********************************************************
-	function parseImageInfo(returnJsonString) {
-		jsonObj = JSON.parse(returnJsonString);
-		document.getElementById("image").innerHTML = '<image height="300" src="' + jsonObj.path + '">';
-		currentQ = jsonObj.word;
-		currentA = "     ";
-		draw_word_letters();
-		//console.log(jsonObj);
-	}
 	
 	// ********************************************************
 	//  DRAW WORD LETTES
@@ -97,92 +90,52 @@
 		document.getElementById("answer").innerHTML = innerHTMLA;
 	}
 	
-	
 	// ********************************************************
-	// GET NEW WORD FUNCTION 
+	//  WEB SOCKET
 	// ********************************************************
-	function getWordData() {
-		var xhttp = new XMLHttpRequest();
-			xhttp.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				console.log(this.responseText);
-				parseImageInfo(this.responseText)
-				start_interval();
-			} //end if 
-		};
-		xhttp.open("GET", "worddata.json", true);
-		xhttp.send();
-	}
-	
-	// ********************************************************
-	// GET NEW WORD FUNCTION 
-	// ********************************************************
-	function getNewWord() {
-	  lastA = '      '; /// reset 
-	  var xhttp = new XMLHttpRequest();
-	  xhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			console.log(this.responseText);
-			parseImageInfo(this.responseText)
-			start_interval();
-		} //end if 
-	  };
-	  xhttp.open("GET", "newword.json", true);
-	  xhttp.send();
-	}
 	
 	
-	
-	
-	// ********************************************************
-	// get sync info 
-	// ********************************************************
-	function getSyncData() {
-	  var xhttp = new XMLHttpRequest();
-	  xhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-		  jsonObj = JSON.parse(this.responseText);
-		  currentA = jsonObj.a;
-		  currentQ = jsonObj.q;
-		  if (currentA != lastA){
+	var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
+	// on open
+	connection.onopen = function () {  connection.send('Connect ' + new Date()); }; 
+	// on error
+	connection.onerror = function (error) {    console.log('WebSocket Error ', error);};
+
+	// on message 
+	connection.onmessage = function (e) {  
+		//parse json
+		jsonObj = JSON.parse(e.data);
+		console.log('Server: ', jsonObj);
+		
+		currentA = jsonObj.a;
+		currentQ = jsonObj.q;
+		if (currentA != lastA){
 			console.log("chnage in answer");
 			// so not draw when after anwer mode
 			if (system_state != 3) {
 				draw_word_letters();
 			}
-		  }
-		  
-		  // set last
-		  lastA = currentA;
-		  lastQ = currentQ;
-		  if (jsonObj.state !=system_state) {
-			setSystemState(jsonObj.state);
-		  } //end if 
-		  //console.log(jsonObj);
-		  if (t_Interval)
-			setTimeout(function(){ getSyncData(); }, 150);
+		}
+		
+		// if we have path in the json
+		if (jsonObj.path != null){
+			document.getElementById("image").innerHTML = '<image height="300" src="' + jsonObj.path + '">';
+		
+		    // draw the letters 
+			draw_word_letters();
 		} //end if 
-	  };
-	  xhttp.open("GET", "sync.json", true);
-	  xhttp.send();
-	}
-
+			
+		// set last
+		lastA = currentA;
+		lastQ = currentQ;
+		
+		if (jsonObj.state != system_state) {
+			setSystemState(jsonObj.state);
+		} //end if 
+		
+	};
 	
-	// run the sync on load 
-	getSyncData();
-	var t_Interval;
-	
-	function start_interval() {
-		console.log('start interval');
-		setTimeout(function(){ getSyncData(); }, 250);
-		t_Interval = true;
-		//t_Interval = setInterval(function() {getSyncData();}, 500); 
-	}
-	function stop_interval() {
-		t_Interval = false;
-		console.log('stop interval');
-	}
-	
+	function getNewWord() { connection.send('#n'); }
 	
 </script>
 </body>

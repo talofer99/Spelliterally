@@ -1,6 +1,6 @@
 String spellWordList[60];
 byte spellWordListLength;
-byte spellWordListSelectedIndex = 0;
+byte currentSelectedWordIndex = 0;
 
 
 
@@ -24,3 +24,34 @@ void setUpWordList() {
 } //end setUpWordList  
 // ********************************************************************************************
 // ********************************************************************************************
+
+//==============================================================
+//  RETURN IMAGE DATA JSON
+//==============================================================
+
+String returnImagePath() {
+  String imagePath = "";
+  // now lets get the path
+  File wordFile = SPIFFS.open("/spell/" + spellWordList[currentSelectedWordIndex] + ".txt", "r");
+  while (wordFile.available()) {
+    imagePath.concat((char)wordFile.read());
+  } // end while
+  wordFile.close();
+  
+  return imagePath;
+}
+
+
+//==============================================================
+//   SELECT NEW WORD
+//==============================================================
+void selectNewWord() {
+  byte newRandomWordIndex = currentSelectedWordIndex;
+  // ***********************************
+  while (newRandomWordIndex == currentSelectedWordIndex) {
+    newRandomWordIndex = random(0, spellWordListLength);
+  } // while they are the same
+  // set new one
+  currentSelectedWordIndex = newRandomWordIndex;
+  setNewQuestion(spellWordList[currentSelectedWordIndex]); //set new word
+}
