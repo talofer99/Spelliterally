@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div style="display: inline-block;">
+	<div style="float: left; height: 50px; padding-right:25px; padding-left:5px;">
+		<span style="font-size:1.5em; font-weight: bold;">SPELLITERALLY 1.0</span>
+	</div>
+	<div style="float: left; height: 50px;">
+		<button onClick="getNewWord()">GET NEW WORD</button>	
+	</div>
+</div>
+<div id="image" style="display: float:left; width: 100%;"></div>
+
+
+<div id="answer" style="display: float:left; width: 100%; display: inline-block;"></div>
+
+
+<div id="output" style="display: float:left; width: 100%;"></div>
+
+
+
+<script>
+	var system_state=-1; //so if the game board state is ZERO it will show start new game
+	var currentA = "";
+	var currentQ = "";
+	var lastA = "";
+	var lastQ = "";
+	
+	
+	// ********************************************************
+	// set new ststem state
+	// ********************************************************
+	function setSystemState(newSystemState) { 
+		console.log(newSystemState);
+		switch(newSystemState) {
+			case 0:
+				console.log("NEW - waiting for player");
+				document.getElementById("image").innerHTML = 'LOADING .....';
+				getNewWord();
+				break;
+			case 1:
+				document.getElementById("output").innerHTML = '';
+				console.log("IN GAME");
+				// only do if its not startup (since the get new word does the same)
+				if (system_state !=0) {
+					document.getElementById("image").innerHTML = 'LOADING .....';
+					document.getElementById("answer").innerHTML = '';
+					console.log("Get Word Data");
+					stop_interval();
+					getWordData();
+				}
+				break;
+			case 3:
+				console.log("WINNER");
+				document.getElementById("output").innerHTML = '<h1>GOOD JOB <BR>NOW REMOVE ALL CARDS!</h1>'
+				break;
+		} //end switch
+		system_state=newSystemState;
+	} //end function
+	
+	// ********************************************************
+	//  FUNCTION PARSE IMAGE INFO
+	// ********************************************************
+	function parseImageInfo(returnJsonString) {
+		jsonObj = JSON.parse(returnJsonString);
+		document.getElementById("image").innerHTML = '<image height="300" src="' + jsonObj.path + '">';
+		currentQ = jsonObj.word;
+		currentA = "     ";
+		draw_word_letters();
+		//console.log(jsonObj);
+	}
+	
+	// ********************************************************
+	//  DRAW WORD LETTES
+	// ********************************************************
+	function draw_word_letters() {
+		var innerHTMLA = '';
+		var backgroundColor = '';
+		
+		for (var i=0; i < currentQ.length; i++) {
+			if (currentA[i] == ' ') {
+				backgroundColor = 'gray';
+			} else if (currentA[i] == currentQ[i]) {
+				backgroundColor = 'green';
+			} else {
+				backgroundColor = 'red';
+			} //end if 
+		
+			innerHTMLA += '<div style="height:50; width:50px; background-color:' + backgroundColor + '; float: left; margin-right:10px; padding-left:5px; font-size:3.5em;">';
+			if (currentA[i] == ' ') {
+				innerHTMLA += '&nbsp';
+			} else {
+				innerHTMLA += currentA[i];
+			}
+			innerHTMLA += '</div>';
+		}
+		document.getElementById("answer").innerHTML = innerHTMLA;
+	}
+	
+	
+	// ********************************************************
+	// GET NEW WORD FUNCTION 
+	// ********************************************************
+	function getWordData() {
+		var xhttp = new XMLHttpRequest();
+			xhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				console.log(this.responseText);
+				parseImageInfo(this.responseText)
+				start_interval();
+			} //end if 
+		};
+		xhttp.open("GET", "worddata.json", true);
+		xhttp.send();
+	}
+	
+	// ********************************************************
+	// GET NEW WORD FUNCTION 
+	// ********************************************************
+	function getNewWord() {
+	  lastA = '      '; /// reset 
+	  var xhttp = new XMLHttpRequest();
+	  xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			console.log(this.responseText);
+			parseImageInfo(this.responseText)
+			start_interval();
+		} //end if 
+	  };
+	  xhttp.open("GET", "newword.json", true);
+	  xhttp.send();
+	}
+	
+	
+	
+	
+	// ********************************************************
+	// get sync info 
+	// ********************************************************
+	function getSyncData() {
+	  var xhttp = new XMLHttpRequest();
+	  xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+		  jsonObj = JSON.parse(this.responseText);
+		  currentA = jsonObj.a;
+		  currentQ = jsonObj.q;
+		  if (currentA != lastA){
+			console.log("chnage in answer");
+			// so not draw when after anwer mode
+			if (system_state != 3) {
+				draw_word_letters();
+			}
+		  }
+		  
+		  // set last
+		  lastA = currentA;
+		  lastQ = currentQ;
+		  if (jsonObj.state !=system_state) {
+			setSystemState(jsonObj.state);
+		  } //end if 
+		  //console.log(jsonObj);
+		  if (t_Interval)
+			setTimeout(function(){ getSyncData(); }, 150);
+		} //end if 
+	  };
+	  xhttp.open("GET", "sync.json", true);
+	  xhttp.send();
+	}
+
+	
+	// run the sync on load 
+	getSyncData();
+	var t_Interval;
+	
+	function start_interval() {
+		console.log('start interval');
+		setTimeout(function(){ getSyncData(); }, 250);
+		t_Interval = true;
+		//t_Interval = setInterval(function() {getSyncData();}, 500); 
+	}
+	function stop_interval() {
+		t_Interval = false;
+		console.log('stop interval');
+	}
+	
+	
+</script>
+</body>
+
+
+</html>
