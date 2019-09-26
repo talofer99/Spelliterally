@@ -126,7 +126,43 @@ boolean is_rfid_solved() {
 
 
 
+boolean rfid_check_first_reader() {
+  boolean isChanged = false;
+  byte reader = 0;
+  //Serial.println("READER - " + String(reader));
+  if (mfrc522[reader].PICC_IsNewCardPresent()) {
+    flagCounter[reader] = 0;
+    if (mfrc522[reader].PICC_ReadCardSerial()) {
+      char checkedLetter = checkLetter(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size, reader);
+      if (memcmp ( currentCardId, mfrc522[reader].uid.uidByte, sizeof(currentCardId) ) != 0 ) {
+        memcpy(currentCardId, mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size * sizeof(byte));
+        answer[reader] = checkedLetter;
+        isChanged = true;
+      }
+    } //end if
+  } else {
+    flagCounter[reader]++;
+  } //end if
 
+  // hadneling the state
+  if (flagCounter[reader] == 10) {
+    answer[reader] = 0;
+    memset(currentCardId, 0x00, sizeof(currentCardId)); //clear
+    
+    isChanged = true;
+  } else if (flagCounter[reader] > 250) {
+    flagCounter[reader] = 21;
+  } //end if
+
+  return isChanged;
+}
+
+
+
+
+
+
+// ********************************
 // RFID loop
 boolean rfid_change() {
   boolean isChanged = false;
@@ -140,14 +176,14 @@ boolean rfid_change() {
         if (checkedLetter != answer[reader]) {
           answer[reader] = checkedLetter;
           isChanged = true;
-        }
+        } //end if
       } //end if
     } else {
       flagCounter[reader]++;
     } //end if
 
     // hadneling the state
-    if (flagCounter[reader] == 5) {
+    if (flagCounter[reader] == 2) {
       answer[reader] = 0;
       isChanged = true;
     } else if (flagCounter[reader] > 250) {

@@ -1,15 +1,14 @@
 /* Spelliterally - By Tal Ofer (talofer99@hotmail.com)
- * The RFID spelling game, with web interface.
- * RFID pinouts are in the RFID file
- * secret.h contain your wifi info.
- * you will need the SPIF upload tool and to define a SPIFF that will enought to uploade the files in the /data folder
+   The RFID spelling game, with web interface.
+   RFID pinouts are in the RFID file
+   secret.h contain your wifi info.
+   you will need the SPIF upload tool and to define a SPIFF that will enought to uploade the files in the /data folder
 */
 
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266mDNS.h>
 #include "secrets.h"
@@ -18,8 +17,10 @@
 #define SSWaitForAnswer 1
 #define SSWaitForSolve 2
 #define SSSolved 3
+#define SSLettersAdmin 99
 byte systemState;
 unsigned long systemStateMillis;
+byte currentCardId[4];
 
 #define MAX_RFIDCARDS 50
 char letters[MAX_RFIDCARDS];
@@ -47,7 +48,7 @@ void setup(void) {
   Serial.begin(115200);
 
   //Connect to your WiFi router
-  WiFi.begin(ssid, password);     
+  WiFi.begin(ssid, password);
   Serial.print("Connecting");
 
   // Wait for connection
@@ -56,7 +57,7 @@ void setup(void) {
     Serial.print(".");
   }
   Serial.println("Done");
-  
+
   //Initialize File System
   if (SPIFFS.begin())  {
     Serial.println("SPIFFS Initialize....ok");
@@ -75,10 +76,12 @@ void setup(void) {
   WS_setup();
 
   server.serveStatic("/", SPIFFS, "/index.html");
+  server.serveStatic("/adminCards/", SPIFFS, "/AdminCards.html");
+
   server.serveStatic("/img", SPIFFS, "/img");
   server.serveStatic("/css", SPIFFS, "/css");
   server.serveStatic("/js", SPIFFS, "/js");
-  
+
   server.begin();                  //Start server
   Serial.println("HTTP server started");
 
@@ -94,11 +97,17 @@ void setup(void) {
   setup_rfid_pins();
   setup_rfid();
 
-  // setup letter list 
+  
+  // setup letter list
+  Serial.println("Setting up letters");
   setUpLetterList();
+  Serial.println("DONE Setting up letters");
+
   
   //setting up word list
+  Serial.println("Setting up words");
   setUpWordList();
+  Serial.println("Done Setting up letters");
 
   //set system state
   set_system_state(SSWaitForPlayer);
@@ -134,9 +143,51 @@ void loop(void) {
         }
       } //end if
       break;
+    case SSLettersAdmin:
+      card_admin_process();
+      break;
   } //end switch
 
 } //end loop
+
+//==============================================================
+//   Card_Admin_Process
+//==============================================================
+void card_admin_process() {
+  if (rfid_check_first_reader()) {
+    // lets check the status of data
+    byte card_state = 0;
+    // if card id is empty - no card
+    if (currentCardId[0] + currentCardId[1] + currentCardId[2] + currentCardId[3] == 0) {
+      Serial.println("NO CARD");
+    }
+    // if we gto answer so its a known card
+    else if (answer[0])
+    {
+      Serial.print("KNOWN CARD - ");
+      Serial.println(answer[0]);
+      card_state  =1 ;
+    }
+    // if no answer its a new card
+    else
+    {
+      Serial.println("NEW CARD -  ");
+      Serial.print(currentCardId[0]);
+      Serial.print(currentCardId[1]);
+      Serial.print(currentCardId[2]);
+      Serial.println(currentCardId[3]);
+      card_state =2;
+    } //end if
+    
+    WS_SendSCardpdate(card_state, answer[0]);
+
+
+
+  } //end if
+
+
+
+} //emd card_admin_process
 
 
 //==============================================================

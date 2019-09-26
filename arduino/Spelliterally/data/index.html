@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html>
+<head>
+	<title>SPELLITERALLY 1.0</title>
+</head>
 <body>
 <div style="display: inline-block;">
 	<div style="float: left; height: 50px; padding-right:25px; padding-left:5px;">
@@ -33,6 +36,51 @@
 	var lastQ = '';
 	
 	
+	// ********************************************************
+	//  WEB SOCKET
+	// ********************************************************
+	var connection = new WebSocket('ws://'+location.hostname+':81/g', ['arduino']);
+	// on open
+	connection.onopen = function () {  connection.send('Connect ' + new Date()); }; 
+	// on error
+	connection.onerror = function (error) {    console.log('WebSocket Error ', error);};
+
+	// on message 
+	connection.onmessage = function (e){
+	
+		//parse json
+		jsonObj = JSON.parse(e.data);
+		console.log('Server: ', jsonObj);
+		
+		currentA = jsonObj.a;
+		currentQ = jsonObj.q;
+		if (currentA != lastA){
+			console.log("chnage in answer");
+			// so not draw when after anwer mode
+			if (system_state != 3) {
+				draw_word_letters();
+			}
+		}
+		
+		// if we have path in the json
+		if (jsonObj.path != null){
+			document.getElementById("image").innerHTML = '<image height="300" src="' + jsonObj.path + '">';
+		
+		    // draw the letters 
+			draw_word_letters();
+		} //end if 
+			
+		// set last
+		lastA = currentA;
+		lastQ = currentQ;
+		
+		if (jsonObj.state != system_state) {
+			setSystemState(jsonObj.state);
+		} //end if 
+		
+	};
+	
+	// ********************************************************
 	
 	// ********************************************************
 	// set new ststem state
@@ -90,51 +138,13 @@
 		document.getElementById("answer").innerHTML = innerHTMLA;
 	}
 	
-	// ********************************************************
-	//  WEB SOCKET
-	// ********************************************************
 	
 	
-	var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
-	// on open
-	connection.onopen = function () {  connection.send('Connect ' + new Date()); }; 
-	// on error
-	connection.onerror = function (error) {    console.log('WebSocket Error ', error);};
 
-	// on message 
-	connection.onmessage = function (e) {  
-		//parse json
-		jsonObj = JSON.parse(e.data);
-		console.log('Server: ', jsonObj);
-		
-		currentA = jsonObj.a;
-		currentQ = jsonObj.q;
-		if (currentA != lastA){
-			console.log("chnage in answer");
-			// so not draw when after anwer mode
-			if (system_state != 3) {
-				draw_word_letters();
-			}
-		}
-		
-		// if we have path in the json
-		if (jsonObj.path != null){
-			document.getElementById("image").innerHTML = '<image height="300" src="' + jsonObj.path + '">';
-		
-		    // draw the letters 
-			draw_word_letters();
-		} //end if 
-			
-		// set last
-		lastA = currentA;
-		lastQ = currentQ;
-		
-		if (jsonObj.state != system_state) {
-			setSystemState(jsonObj.state);
-		} //end if 
-		
-	};
 	
+	// ********************************************************
+	//  Get new word 
+	// ********************************************************
 	function getNewWord() { connection.send('#n'); }
 	
 </script>
