@@ -75,6 +75,7 @@ char  checkLetter(byte * buffer, byte bufferSize, byte rederID) {
     // if we got a match
     if (match == bufferSize) {
       returnValue = letters[letterCode];
+      currentCardIdx = letterCode;
       break;
     } //end if
   } //end for

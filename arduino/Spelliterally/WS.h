@@ -157,7 +157,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             saveCardLetterValue(currentCardId,(char) payload[2]);
             setUpLetterList();
             answer[0] = (char) payload[2];
-            WS_SendSCardpdate(1,(char) payload[2]);
+            card_state = 1;
+            WS_SendSCardpdate(card_state,(char) payload[2]);
             break;
         } //end swith
 

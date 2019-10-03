@@ -21,6 +21,8 @@
 byte systemState;
 unsigned long systemStateMillis;
 byte currentCardId[4];
+byte currentCardIdx;
+byte card_state = 0;
 
 #define MAX_RFIDCARDS 50
 char letters[MAX_RFIDCARDS];
@@ -38,7 +40,7 @@ const char password[] = SECRET_PASS;   // your network password
 
 ESP8266WebServer server(80); //Server on port 80
 ESP8266HTTPUpdateServer httpUpdater;
-
+File fsUploadFile;              // a File object to temporarily store the received file
 
 
 //==============================================================
@@ -76,9 +78,11 @@ void setup(void) {
   WS_setup();
 
   server.serveStatic("/", SPIFFS, "/index.html");
-  server.serveStatic("/adminCards/", SPIFFS, "/AdminCards.html");
-  server.on("/backupCards.txt", backupCards);
-  //server.on("/restoreCards", HTTP_POST,[](){ server.send(200); },handleFileUpload);
+  server.serveStatic("/AdminCards.html", SPIFFS, "/AdminCards.html");
+  server.serveStatic("/cards.txt", SPIFFS, "/settings/cards.txt");
+  server.on("/restoreCards", HTTP_POST, []() {
+    server.send(200);
+  }, handleFileUpload);
 
   server.serveStatic("/img", SPIFFS, "/img");
   server.serveStatic("/css", SPIFFS, "/css");
@@ -102,8 +106,7 @@ void setup(void) {
 
   // setup letter list
   Serial.println("Setting up letters");
-  setUpLetterList2();
-  //setUpLetterList();
+  setUpLetterList();
   Serial.println("DONE Setting up letters");
 
 
@@ -159,7 +162,7 @@ void loop(void) {
 void card_admin_process() {
   if (rfid_check_first_reader()) {
     // lets check the status of data
-    byte card_state = 0;
+    card_state = 0;
     // if card id is empty - no card
     if (currentCardId[0] + currentCardId[1] + currentCardId[2] + currentCardId[3] == 0) {
       Serial.println("NO CARD");
@@ -187,26 +190,41 @@ void card_admin_process() {
 } //emd card_admin_process
 
 
+//==============================================================
+//   handle file upload
+//==============================================================
+void handleFileUpload() { // upload a new file to the SPIFFS
+  HTTPUpload& upload = server.upload();
+  if (upload.status == UPLOAD_FILE_START) {
+    String filename = upload.filename;
+    if (!filename.startsWith("/")) filename = "/settings/" + filename;
+    Serial.print("handleFileUpload Name: "); Serial.println(filename);
+    fsUploadFile = SPIFFS.open(filename, "w");            // Open the file for writing in SPIFFS (create if it doesn't exist)
+    filename = String();
+  } else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (fsUploadFile)
+      fsUploadFile.write(upload.buf, upload.currentSize); // Write the received bytes to the file
+  } else if (upload.status == UPLOAD_FILE_END) {
+    if (fsUploadFile) {                                   // If the file was successfully created
+      fsUploadFile.close();                               // Close the file again
+      Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
 
-//==============================================================
-//   backup cards
-//==============================================================
-void backupCards() {
-  String textFile = "";
-  for (byte i = 0; i < lettersArrayActualSize; i++) {
-    int n = sizeof letters_id[i] << 1;
-    char hexstr[n + 1];
-    btox(hexstr, letters_id[i], n);
-    hexstr[n] = 0; /* Terminate! */
-    Serial.println(hexstr);
-    textFile.concat(hexstr);
-    textFile.concat(",");
-    textFile.concat((char)letters[i]);
-    textFile.concat("\n");
-  } //end for
-  server.send(200, "text/plain", textFile);
+      if (server.uri() == "/restoreCards") {
+        setUpLetterList();
+        server.sendHeader("Location", "/AdminCards.html");     // Redirect the client to the success page
+        server.send(303);
+      } 
+      else 
+      {
+        Serial.println("UPLOADED FROM UNKNOWN SOURCE !!!!!");
+      }
+
+      //server.send(200, "text/plain", "Success");
+    } else {
+      server.send(500, "text/plain", "500: couldn't create file");
+    }
+  }
 }
-
 
 
 

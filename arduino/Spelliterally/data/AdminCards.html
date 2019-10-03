@@ -5,10 +5,19 @@
 </head>
 <body>
 <h1>CARDS ADMIN</h1>
-<div id="letter"></div>
+<div id="letter"><span>Place/Remove card</span></div>
 <div id="action"></div>
 <div id="backup" style="margin-top: 30px">
-	<span>Download <a href="/backupCards.txt" download>backupCards.txt</a> file.</span>
+	<span>Download <a href="/cards.txt" download>cards.txt</a> file.</span>
+</div>
+<div id="backup" style="margin-top: 10px">
+	<label>Upload data</label>
+	<form method="post" enctype="multipart/form-data" action="/restoreCards">
+		<input type="file" name="name">
+		<input class="button" type="submit" value="Upload">
+	</form>
+	
+	<span>* make sure the file name is cards.txt</span>
 </div>
 
 <script>
