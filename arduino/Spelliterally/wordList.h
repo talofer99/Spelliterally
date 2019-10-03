@@ -2,15 +2,16 @@ String spellWordList[60];
 byte spellWordListLength;
 byte currentSelectedWordIndex = 0;
 
-void btox(char *xp, byte *bb, int n) 
+void btox(char *xp, byte *bb, int n)
 {
-    const char xx[]= "0123456789ABCDEF";
-    while (--n >= 0) xp[n] = xx[(bb[n>>1] >> ((1 - (n&1)) << 2)) & 0xF];
+  const char xx[] = "0123456789ABCDEF";
+  while (--n >= 0) xp[n] = xx[(bb[n >> 1] >> ((1 - (n & 1)) << 2)) & 0xF];
 }
 
 
-
-
+// **********************************************************************************************************
+// save Card Letter Value
+// **********************************************************************************************************
 void saveCardLetterValue(byte * currentCardId, char letter) {
   Serial.println("WE ARE HERE !!!");
 
@@ -24,7 +25,7 @@ void saveCardLetterValue(byte * currentCardId, char letter) {
   String file_name_string = "/cards/";
   file_name_string.concat(hexstr);
   file_name_string.concat(".txt");
-  
+
   Serial.println(file_name_string);
   File letterFile = SPIFFS.open(file_name_string, "w");
   if (!letterFile) {
@@ -35,35 +36,43 @@ void saveCardLetterValue(byte * currentCardId, char letter) {
   letterFile.close();
 }
 
+// **********************************************************************************************************
+// set up letters
+// **********************************************************************************************************
 void setUpLetterList() {
-  // reset the length of the list
+  //reset the length
   lettersArrayActualSize = 0;
-
-  Dir dir = SPIFFS.openDir("/cards");
-
-  while (dir.next()) {
-    String cardID = dir.fileName();
-    cardID.replace("/cards/", "");
-    cardID.replace(".txt", "");
-    Serial.println(cardID);
-
+  // try to open the cards list file
+  File cardsFile = SPIFFS.open("/settings/cards.txt", "r");
+  if (!cardsFile) {
+    Serial.println("Failed to open the cards list file!");
+    return;
+  } //end if
+  while (cardsFile.available()) {
     for (byte pos = 0; pos < 4; pos++) {
-      char hexVal[2] = {cardID.charAt(pos * 2), cardID.charAt(1 + pos * 2)};
+      char hexVal[2];
+      cardsFile.readBytes(hexVal, 2);
       byte num = (byte)strtol(hexVal, NULL, 16);
       letters_id[lettersArrayActualSize][pos] = num;
       Serial.println(letters_id[lettersArrayActualSize][pos], HEX);
     } //end for
-
-    File letterFile = SPIFFS.open(dir.fileName(), "r");
-    letters[lettersArrayActualSize] =  (char) letterFile.read();
-    Serial.println((char)letters[lettersArrayActualSize]);
-    letterFile.close();
-
-
+    // to make sure the integrity for the file is correct we are looking for a comma now 
+    if ((char)cardsFile.read() != ',') {
+      Serial.println("Missing comma in letter file");
+      return;
+    } //end if 
+    // read the letter
+    letters[lettersArrayActualSize] = (char)cardsFile.read();
+    // to make sure the integrity for the file is correct we are looking for a \n now 
+    if ((char)cardsFile.read() != '\n') {
+      Serial.println("Missing \\n in letter file");
+      return;
+    } //end if 
+    // move to next letter in the array
     lettersArrayActualSize++;
-    //spellWordList[spellWordListLength++] = wordSpell;
-  }//end while
-} //end setUpWordList
+  } //end while
+  cardsFile.close();
+}
 
 
 // ********************************************************************************************
@@ -88,7 +97,7 @@ void setUpWordList() {
 // ********************************************************************************************
 
 //==============================================================
-//  RETURN IMAGE DATA JSON
+//  RETURN IMAGE PATH FROM FILE
 //==============================================================
 
 String returnImagePath() {

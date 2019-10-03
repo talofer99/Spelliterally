@@ -77,6 +77,8 @@ void setup(void) {
 
   server.serveStatic("/", SPIFFS, "/index.html");
   server.serveStatic("/adminCards/", SPIFFS, "/AdminCards.html");
+  server.on("/backupCards.txt", backupCards);
+  //server.on("/restoreCards", HTTP_POST,[](){ server.send(200); },handleFileUpload);
 
   server.serveStatic("/img", SPIFFS, "/img");
   server.serveStatic("/css", SPIFFS, "/css");
@@ -97,13 +99,14 @@ void setup(void) {
   setup_rfid_pins();
   setup_rfid();
 
-  
+
   // setup letter list
   Serial.println("Setting up letters");
-  setUpLetterList();
+  setUpLetterList2();
+  //setUpLetterList();
   Serial.println("DONE Setting up letters");
 
-  
+
   //setting up word list
   Serial.println("Setting up words");
   setUpWordList();
@@ -166,7 +169,7 @@ void card_admin_process() {
     {
       Serial.print("KNOWN CARD - ");
       Serial.println(answer[0]);
-      card_state  =1 ;
+      card_state  = 1 ;
     }
     // if no answer its a new card
     else
@@ -176,18 +179,35 @@ void card_admin_process() {
       Serial.print(currentCardId[1]);
       Serial.print(currentCardId[2]);
       Serial.println(currentCardId[3]);
-      card_state =2;
+      card_state = 2;
     } //end if
-    
+
     WS_SendSCardpdate(card_state, answer[0]);
-
-
-
   } //end if
-
-
-
 } //emd card_admin_process
+
+
+
+//==============================================================
+//   backup cards
+//==============================================================
+void backupCards() {
+  String textFile = "";
+  for (byte i = 0; i < lettersArrayActualSize; i++) {
+    int n = sizeof letters_id[i] << 1;
+    char hexstr[n + 1];
+    btox(hexstr, letters_id[i], n);
+    hexstr[n] = 0; /* Terminate! */
+    Serial.println(hexstr);
+    textFile.concat(hexstr);
+    textFile.concat(",");
+    textFile.concat((char)letters[i]);
+    textFile.concat("\n");
+  } //end for
+  server.send(200, "text/plain", textFile);
+}
+
+
 
 
 //==============================================================

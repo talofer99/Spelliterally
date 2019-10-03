@@ -7,7 +7,9 @@
 <h1>CARDS ADMIN</h1>
 <div id="letter"></div>
 <div id="action"></div>
-
+<div id="backup" style="margin-top: 30px">
+	<span>Download <a href="/backupCards.txt" download>backupCards.txt</a> file.</span>
+</div>
 
 <script>
 	var card_state = -1;
@@ -33,7 +35,7 @@
 			switch (jsonObj.card_state) {
 				case 0:
 					console.log("NO CARD");
-					document.getElementById("letter").innerHTML = "Place<BR>A Card";
+					document.getElementById("letter").innerHTML = "NO CARD";
 					document.getElementById("action").innerHTML = ""
 					
 					break;
@@ -44,7 +46,7 @@
 
 					break;
 				case 2:
-					document.getElementById("letter").innerHTML = "NEW<BR>CARD";
+					document.getElementById("letter").innerHTML = "-NEW-";
 					document.getElementById("action").innerHTML = draw_ui('Add')
 					console.log("New card");
 					break;
