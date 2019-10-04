@@ -184,7 +184,7 @@ boolean rfid_change() {
     } //end if
 
     // hadneling the state
-    if (flagCounter[reader] == 2) {
+    if (flagCounter[reader] == 4) {
       answer[reader] = 0;
       isChanged = true;
     } else if (flagCounter[reader] > 250) {

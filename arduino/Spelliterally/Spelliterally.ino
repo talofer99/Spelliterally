@@ -83,6 +83,8 @@ void setup(void) {
   server.on("/restoreCards", HTTP_POST, []() {
     server.send(200);
   }, handleFileUpload);
+  server.serveStatic("/AdminWords.html", SPIFFS, "/AdminWords.html");
+
 
   server.serveStatic("/img", SPIFFS, "/img");
   server.serveStatic("/css", SPIFFS, "/css");

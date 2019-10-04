@@ -138,7 +138,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             // if the game was never started
             if (systemState == SSWaitForPlayer) {
               startNewGameProccess();
-            } //end if
+            } else {
+              // send update with new image
+              WS_SendStatsUpdate(true);
+            }
           } //end if
         } //end if
       } //end case

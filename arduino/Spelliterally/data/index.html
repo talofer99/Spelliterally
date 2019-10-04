@@ -1,30 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
 	<title>SPELLITERALLY 1.0</title>
+	<link rel="stylesheet" type="text/css" href="/css/style.css" />
 </head>
 <body>
-<div style="display: inline-block;">
-	<div style="float: left; height: 50px; padding-right:25px; padding-left:5px;">
-		<span style="font-size:1.5em; font-weight: bold;">SPELLITERALLY 1.0</span>
+<div class="container">
+
+	<div class="game_name">
+		<h1>SPELLITERALLY 1.0</h1>
 	</div>
-	<div style="float: left; height: 50px;">
-		<button onClick="getNewWord()">GET NEW WORD</button>	
+
+	<div class="new_board">
+		<button class="myButton" onclick="getNewWord()">GET NEW WORD</button>	
 	</div>
-</div>
-<div id="image" style="display: float:left; width: 100%;"></div>
+	
+	<div class="cont_2">
+
+		<div class="one_of_2">
+			<div id="image"></div>
+		</div>
+		
+		<div class="one_of_2">
+			<div id="answer"></div>
+		</div>
+		
+	</div>
+	
+	<div id="output"></div>
 
 
-<div id="answer" style="display: float:left; width: 100%; display: inline-block;"></div>
-
-
-<div id="output" style="display: float:left; width: 100%;"></div>
-
-
-<audio preload="auto" id="goodJobSound">
-  <source src="img/goodjob.mp3" type="audio/mpeg">
-  Your browser does not support the audio tag.
-</audio>
+	<audio preload="auto" id="goodJobSound">
+	  <source src="img/goodjob.mp3" type="audio/mpeg">
+	  Your browser does not support the audio tag.
+	</audio>
 
 
 
@@ -102,7 +111,7 @@
 				//audio.play();
 				var vid = document.getElementById("goodJobSound");
 				vid.play();
-				document.getElementById("output").innerHTML = '<h1>GOOD JOB <BR>NOW REMOVE ALL CARDS!</h1>'
+				document.getElementById("output").innerHTML = '<h2>GOOD JOB</h2><h3>NOW REMOVE ALL CARDS!</h3>' //I changed this line...!!!!!
 				break;
 		} //end switch
 		
@@ -127,7 +136,7 @@
 				backgroundColor = 'red';
 			} //end if 
 		
-			innerHTMLA += '<div style="height:50; width:50px; background-color:' + backgroundColor + '; float: left; margin-right:10px; padding-left:5px; font-size:3.5em;">';
+			innerHTMLA += '<div  class="letter_cont" style="color:' + backgroundColor + ';">';//I changed this line...!!!!!
 			if (currentA[i] == ' ') {
 				innerHTMLA += '&nbsp';
 			} else {
@@ -148,7 +157,7 @@
 	function getNewWord() { connection.send('#n'); }
 	
 </script>
+
+</div>
 </body>
-
-
 </html>
