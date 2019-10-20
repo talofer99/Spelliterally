@@ -37,7 +37,7 @@ String stateJson(boolean addImagePath) {
 
   // add Q
   jsonResponse.concat(",\"q\":\"");
-  jsonResponse.concat(spellWordList[currentSelectedWordIndex]);
+  jsonResponse.concat(obj["words"][currentSelectedWordIndex]["w"].as<String>());//spellWordList[currentSelectedWordIndex]
   jsonResponse.concat("\"");
   // add A
   jsonResponse.concat(",\"a\":\"");
@@ -121,7 +121,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
         //check how many connect there are
         int i = webSocket.connectedClients();
-        Serial.print("webSocket.connectedClients - ");
+        Serial.print(F("webSocket.connectedClients - "));
         Serial.println(i);
 
         // check the page we are coming from

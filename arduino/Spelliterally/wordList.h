@@ -1,6 +1,15 @@
-String spellWordList[60];
+#define HISTORYBUFFERSIZE 5
+byte historyBuffer[HISTORYBUFFERSIZE];
+byte historyBufferIDX;
+
+// Use arduinojson.org/assistant to compute the capacity.
+StaticJsonDocument<4024> doc;
+JsonObject obj;
+
 byte spellWordListLength;
 byte currentSelectedWordIndex = 0;
+
+
 
 void btox(char *xp, byte *bb, int n)
 {
@@ -18,33 +27,33 @@ void saveCardLetterValue(byte * currentCardId, char letter) {
   char hexstr[n + 1];
   btox(hexstr, currentCardId, n);
   hexstr[n] = 0; /* Terminate! */
-  
-  // make sure fileexists 
+
+  // make sure fileexists
   if (!SPIFFS.exists("/settings/cards.txt")) {
     Serial.println("NO CARDS FILE");
     return;
-  } //end if 
+  } //end if
 
 
   // if its new - we append to end
   if (card_state == 2) {
     File letterFile = SPIFFS.open("/settings/cards.txt", "a");
     letterFile.print(hexstr);
-    letterFile.print(",");
+    letterFile.print(F(","));
     letterFile.print(letter);
-    letterFile.print("\n");
+    letterFile.print(F("\n"));
     letterFile.close();
   }
   //if not new we need to seek
   else
   {
     // lets calculate the position
-    int offset = currentCardIdx * 11 + 9; // each line is 11 and to get to the letter we need 9 more steps 
+    int offset = currentCardIdx * 11 + 9; // each line is 11 and to get to the letter we need 9 more steps
     File letterFile = SPIFFS.open("/settings/cards.txt", "r+");
     letterFile.seek(offset, SeekSet);
     letterFile.write(letter);
     letterFile.close();
-  } //end if 
+  } //end if
 }
 
 // **********************************************************************************************************
@@ -69,14 +78,14 @@ void setUpLetterList() {
     } //end for
     // to make sure the integrity for the file is correct we are looking for a comma now
     if ((char)cardsFile.read() != ',') {
-      Serial.println("Missing comma in letter file");
+      Serial.println(F("Missing comma in letter file"));
       return;
     } //end if
     // read the letter
     letters[lettersArrayActualSize] = (char)cardsFile.read();
     // to make sure the integrity for the file is correct we are looking for a \n now
     if ((char)cardsFile.read() != '\n') {
-      Serial.println("Missing \\n in letter file");
+      Serial.println(F("Missing \\n in letter file"));
       return;
     } //end if
     // move to next letter in the array
@@ -90,19 +99,37 @@ void setUpLetterList() {
 // LIST OF WORDS ARE STORED ON THE SPIFF AS [WORD].txt and contain a valid full url to an image
 // ********************************************************************************************
 void setUpWordList() {
+  // reset history
+  historyBufferIDX = 0;
+
   // reset the length of the list
   spellWordListLength = 0;
 
-  Dir dir = SPIFFS.openDir("/spell");
 
-  while (dir.next()) {
-    String wordSpell = dir.fileName();
-    wordSpell.replace("/spell/", "");
-    wordSpell.replace(".txt", "");
-    Serial.println(wordSpell);
-    spellWordList[spellWordListLength++] = wordSpell;
+  // Open file for reading
+  File file = SPIFFS.open("/settings/spell.json", "r");
 
-  }//end while
+  // Parse the root object
+  auto error = deserializeJson(doc, file);
+  if (error) {
+    Serial.print(F("deserializeJson() failed with code "));
+    Serial.println(error.c_str());
+    return;
+  }
+  // close file
+  file.close();
+  // create the json obj
+  obj = doc.as<JsonObject>();
+
+  for (int i = 0; i < obj["words"].size(); i++) {
+    //Serial.println(obj["words"][i].as<String>());
+    Serial.println(obj["words"][i]["w"].as<String>());
+    Serial.println(obj["words"][i]["p"].as<String>());
+  }
+
+  spellWordListLength = obj["words"].size();
+
+
 } //end setUpWordList
 // ********************************************************************************************
 // ********************************************************************************************
@@ -110,30 +137,56 @@ void setUpWordList() {
 //==============================================================
 //  RETURN IMAGE PATH FROM FILE
 //==============================================================
-
+// ********************************************************************************************
+// return path image
+// ********************************************************************************************
 String returnImagePath() {
-  String imagePath = "";
-  // now lets get the path
-  File wordFile = SPIFFS.open("/spell/" + spellWordList[currentSelectedWordIndex] + ".txt", "r");
-  while (wordFile.available()) {
-    imagePath.concat((char)wordFile.read());
-  } // end while
-  wordFile.close();
+//  String imagePath = "";
+//  // now lets get the path
+//  File wordFile = SPIFFS.open("/spell/" + spellWordList[currentSelectedWordIndex] + ".txt", "r");
+//  while (wordFile.available()) {
+//    imagePath.concat((char)wordFile.read());
+//  } // end while
+//  wordFile.close();
 
-  return imagePath;
+  return obj["words"][currentSelectedWordIndex]["p"].as<String>();// imagePath;
 }
 
+// ********************************************************************************************
+// is word in history
+// ********************************************************************************************
+
+boolean wordInHistory(byte wordIDX) {
+  boolean returnValue = false;
+  for (byte i = 0; i < HISTORYBUFFERSIZE; i++) {
+    if (historyBuffer[i] == wordIDX) {
+      returnValue = true;
+      break;
+    } //end if
+  } //end for
+  return returnValue;
+}
+
+void addWordToHistory(byte wordIDX) {
+  historyBuffer[historyBufferIDX] = wordIDX;
+  historyBufferIDX += 1;
+  if (historyBufferIDX == HISTORYBUFFERSIZE) {
+    historyBufferIDX = 0;
+  }
+}
 
 //==============================================================
 //   SELECT NEW WORD
 //==============================================================
 void selectNewWord() {
-  byte newRandomWordIndex = currentSelectedWordIndex;
+  byte newRandomWordIndex = random(0, spellWordListLength);
   // ***********************************
-  while (newRandomWordIndex == currentSelectedWordIndex) {
+  while (wordInHistory(newRandomWordIndex)) {
     newRandomWordIndex = random(0, spellWordListLength);
   } // while they are the same
   // set new one
   currentSelectedWordIndex = newRandomWordIndex;
-  setNewQuestion(spellWordList[currentSelectedWordIndex]); //set new word
+  setNewQuestion(obj["words"][currentSelectedWordIndex]["w"].as<String>()); //set new word //spellWordList[currentSelectedWordIndex]
+  addWordToHistory(currentSelectedWordIndex);
+
 }

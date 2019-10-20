@@ -1,21 +1,21 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
-#define NR_OF_READERS   5
+#define NR_OF_READERS   6
 #define RST_PIN         D0
 #define SS_1_PIN        D8
 #define SS_2_PIN        D4
 #define SS_3_PIN        D3
 #define SS_4_PIN        D2
 #define SS_5_PIN        D1
+#define SS_6_PIN        RX
 
-#define SS_6_PIN        43
 #define SS_7_PIN        47
 
 
-
+//
 byte flagCounter[NR_OF_READERS];
-byte ssPins[] = {SS_5_PIN, SS_4_PIN, SS_3_PIN, SS_2_PIN, SS_1_PIN};
+byte ssPins[] = { SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN, SS_5_PIN, SS_6_PIN};
 
 MFRC522 mfrc522[NR_OF_READERS];   // Create MFRC522 instance.
 
@@ -48,7 +48,9 @@ void setup_rfid() {
 
 
 void setNewQuestion(String newWord) {
-  Serial.println("new word - " + newWord);
+  Serial.print(F("new word - "));
+  Serial.println(newWord);
+  
   for (byte i = 0; i < NR_OF_READERS; i++) {
     if (i < newWord.length())
       question[i] = newWord[i];
