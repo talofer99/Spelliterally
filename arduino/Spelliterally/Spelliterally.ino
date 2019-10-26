@@ -79,6 +79,7 @@ void setup(void) {
   WS_setup();
 
   server.serveStatic("/", SPIFFS, "/index.html");
+  server.serveStatic("/Admin.html", SPIFFS, "/Admin.html");
   server.serveStatic("/AdminCards.html", SPIFFS, "/AdminCards.html");
   server.serveStatic("/cards.txt", SPIFFS, "/settings/cards.txt");
   server.on("/restoreCards", HTTP_POST, []() {

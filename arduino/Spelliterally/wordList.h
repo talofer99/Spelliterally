@@ -1,4 +1,4 @@
-#define HISTORYBUFFERSIZE 5
+#define HISTORYBUFFERSIZE 15
 byte historyBuffer[HISTORYBUFFERSIZE];
 byte historyBufferIDX;
 
