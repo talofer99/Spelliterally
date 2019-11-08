@@ -8,7 +8,7 @@ JsonObject obj;
 
 byte spellWordListLength;
 byte currentSelectedWordIndex = 0;
-
+String spellListJsonPath = "/settings/spell.json";
 
 
 void btox(char *xp, byte *bb, int n)
@@ -18,9 +18,9 @@ void btox(char *xp, byte *bb, int n)
 }
 
 
-// **********************************************************************************************************
+//==============================================================
 // save Card Letter Value
-// **********************************************************************************************************
+//==============================================================
 void saveCardLetterValue(byte * currentCardId, char letter) {
   //convert  id to 8 carecters hex value
   int n = sizeof currentCardId << 1;
@@ -56,9 +56,9 @@ void saveCardLetterValue(byte * currentCardId, char letter) {
   } //end if
 }
 
-// **********************************************************************************************************
+//==============================================================
 // set up letters
-// **********************************************************************************************************
+//==============================================================
 void setUpLetterList() {
   //reset the length
   lettersArrayActualSize = 0;
@@ -95,9 +95,9 @@ void setUpLetterList() {
 }
 
 
-// ********************************************************************************************
-// LIST OF WORDS ARE STORED ON THE SPIFF AS [WORD].txt and contain a valid full url to an image
-// ********************************************************************************************
+//==============================================================
+// LIST OF WORDS STORED ON spell.json
+//==============================================================
 void setUpWordList() {
   // reset history
   historyBufferIDX = 0;
@@ -107,7 +107,7 @@ void setUpWordList() {
 
 
   // Open file for reading
-  File file = SPIFFS.open("/settings/spell.json", "r");
+  File file = SPIFFS.open(spellListJsonPath, "r");
 
   // Parse the root object
   auto error = deserializeJson(doc, file);
@@ -131,22 +131,20 @@ void setUpWordList() {
 
 
 } //end setUpWordList
-// ********************************************************************************************
-// ********************************************************************************************
+
+
+
 
 //==============================================================
 //  RETURN IMAGE PATH FROM FILE
 //==============================================================
-// ********************************************************************************************
-// return path image
-// ********************************************************************************************
 String returnImagePath() {
   return obj["words"][currentSelectedWordIndex]["p"].as<String>();// imagePath;
 }
 
-// ********************************************************************************************
+//==============================================================
 // is word in history
-// ********************************************************************************************
+//==============================================================
 
 boolean wordInHistory(byte wordIDX) {
   boolean returnValue = false;
@@ -158,6 +156,11 @@ boolean wordInHistory(byte wordIDX) {
   } //end for
   return returnValue;
 }
+
+
+//==============================================================
+// add word to history
+//==============================================================
 
 void addWordToHistory(byte wordIDX) {
   historyBuffer[historyBufferIDX] = wordIDX;
@@ -180,5 +183,34 @@ void selectNewWord() {
   currentSelectedWordIndex = newRandomWordIndex;
   setNewQuestion(obj["words"][currentSelectedWordIndex]["w"].as<String>()); //set new word //spellWordList[currentSelectedWordIndex]
   addWordToHistory(currentSelectedWordIndex);
+}
 
+
+//==============================================================
+//   GET SPELL JSON LIST
+//==============================================================
+String getSpellJsonList() {
+  Dir dir = SPIFFS.openDir("/settings/");
+
+  String output = "[";
+  while (dir.next()) {
+    File entry = dir.openFile("r");
+
+
+    Serial.println(String(entry.name()).substring(String(entry.name()).length() - 4));
+    if (String(entry.name()).substring(String(entry.name()).length() - 4) == "json") {
+      if (output != "[") {
+        output += ',';
+      } //end if 
+      output += "\"";
+      output += String(entry.name());
+      output += "\"";
+    } //end if
+    entry.close();
+  } //end while 
+
+  output += "]";
+
+  output = "{\"current\":\"" + spellListJsonPath + "\"," + "\"list\":" + output + "}";
+  return output;
 }

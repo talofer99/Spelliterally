@@ -73,6 +73,29 @@ void setup() {
   });
   server.addHandler(&events);
 
+  // spell list of json
+  server.on("/spell_file_list.json", HTTP_GET, [] (AsyncWebServerRequest * request) {
+    request->send(200, "application/json", getSpellJsonList());
+  });
+
+  //settign list of json
+  // Send a GET request to <IP>/get?message=<message>
+  server.on("/setWordList", HTTP_GET, [] (AsyncWebServerRequest * request) {
+    String message;
+    if (request->hasParam("setCurrent")) {
+      // response 
+      message = "OK";
+      // change the path
+      spellListJsonPath = request->getParam("setCurrent")->value();
+      // load the list 
+      setUpWordList();
+      
+    } else {
+      message = "FAIL";
+    }
+    request->send(200, "text/plain", "Hello, GET: " + message);
+  });
+
 
   // SPIFFS FILE SERVICE TO WEB SERVER
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
