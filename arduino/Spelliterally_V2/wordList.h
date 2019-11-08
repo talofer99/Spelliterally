@@ -195,9 +195,7 @@ String getSpellJsonList() {
   String output = "[";
   while (dir.next()) {
     File entry = dir.openFile("r");
-
-
-    Serial.println(String(entry.name()).substring(String(entry.name()).length() - 4));
+    // if its a json
     if (String(entry.name()).substring(String(entry.name()).length() - 4) == "json") {
       if (output != "[") {
         output += ',';

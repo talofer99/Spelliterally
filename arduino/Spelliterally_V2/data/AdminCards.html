@@ -91,7 +91,7 @@
 	// ********************************************************
 	
 	function draw_ui(type) {
-		var html = '<select id="letterDD" name="test"><option value="0">Select Letter</option>'
+		var html = '<select id="letterDD" name="test"><option value="SELECT">Select Letter</option>'
 		for (var i=65; i <=90; i++) {
 			html += '<option>' + String.fromCharCode(i) + '</option>';
 		}
@@ -109,7 +109,7 @@
 	//  Get new word 
 	// ********************************************************
 	function sendToServer(type) { 
-		if (document.getElementById("letterDD").value == '0') {
+		if (document.getElementById("letterDD").value == 'SELECT') {
 			alert('please select a letter');
 		} else {
 			connection.send('#s' + document.getElementById("letterDD").value); 
