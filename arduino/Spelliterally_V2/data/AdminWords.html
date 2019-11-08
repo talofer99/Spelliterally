@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>SPELLITERALLY 1.0 - CARDS ADMIN</title>
+	<link rel="stylesheet" type="text/css" href="/css/style.css" />
+</head>
+<body>
+
+<div class="game_name">
+		<h1>SPELLITERALLY 1.0</h1>
+	</div>
+
+	<div class="new_board">
+		<div style="padding-right:10px;"><a href="/Admin.html"><img src="/img/back.png"></a></div>
+		<h2>WORDS ADMIN</h2>
+	</div>
+	<div class="new_board">
+		<div id="backup" style="margin-top: 30px">
+			<span>Download <a href="/settings/spell.json" download>spell.json</a> file.</span>
+		</div>
+	</div>
+	<div class="new_board">
+		<div id="backup" style="margin-top: 10px">
+			<label>Upload data</label>
+			<form method="post" enctype="multipart/form-data" action="/restoreSpell">
+				<input type="file" name="name">
+				<input class="button" type="submit" value="Upload">
+			</form>
+			
+			<span>* make sure the file name is spell.json</span>
+		</div>
+	</div>
+</div>
+</body>
+
+</html>

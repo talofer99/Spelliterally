@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+	<title>SPELLITERALLY 1.0</title>
+	<link rel="stylesheet" type="text/css" href="/css/style.css" />
+</head>
+<body>
+<div class="container">
+
+	<div class="game_name">
+		<h1>SPELLITERALLY 1.0</h1>
+	</div>
+
+	<div class="new_board">
+		<div style="padding-right:10px;"><a href="/Admin.html"><img src="/img/settings_s.png"></a></div>
+		<button class="myButton" onclick="getNewWord()">GET NEW WORD</button>	
+	</div>
+	
+	<div class="cont_2">
+
+		<div class="one_of_2">
+			<div id="image"></div>
+		</div>
+		
+		<div class="one_of_2">
+			<div id="answer"></div>
+		</div>
+		
+	</div>
+	
+	<div id="output"></div>
+
+
+	<audio preload="auto" id="goodJobSound">
+	  <source src="img/goodjob.mp3" type="audio/mpeg">
+	  Your browser does not support the audio tag.
+	</audio>
+
+
+
+<script>
+	var system_state=-1; //so if the game board state is ZERO it will show start new game
+	var currentA = '';
+	var currentQ = '';
+	var lastA = '';
+	var lastQ = '';
+	
+	
+	// ********************************************************
+	//  WEB SOCKET
+	// ********************************************************
+	var connection = new WebSocket('ws://'+location.hostname+'/ws', ['arduino']);
+	// on open
+	connection.onopen = function () {  connection.send('game'); }; 
+	// on error
+	connection.onerror = function (error) {    console.log('WebSocket Error ', error);};
+
+	// on message 
+	connection.onmessage = function (e){
+		console.log(e.data);
+		//parse json
+		jsonObj = JSON.parse(e.data);
+		console.log('Server: ', jsonObj);
+		
+		currentA = jsonObj.a;
+		currentQ = jsonObj.q;
+		if (currentA != lastA){
+			console.log("chnage in answer");
+			// so not draw when after anwer mode
+			if (system_state != 3) {
+				draw_word_letters();
+			}
+		}
+		
+		// if we have path in the json
+		if (jsonObj.path != null){
+			document.getElementById("image").innerHTML = '<image height="300" src="' + jsonObj.path + '">';
+		
+		    // draw the letters 
+			draw_word_letters();
+		} //end if 
+			
+		// set last
+		lastA = currentA;
+		lastQ = currentQ;
+		
+		if (jsonObj.state != system_state) {
+			setSystemState(jsonObj.state);
+		} //end if 
+		
+	};
+	
+	// ********************************************************
+	
+	// ********************************************************
+	// set new ststem state
+	// ********************************************************
+	function setSystemState(newSystemState) { 
+		console.log(newSystemState);
+		switch(newSystemState) {
+			case 0:
+				console.log("NEW - waiting for player");
+				document.getElementById("image").innerHTML = 'LOADING .....';
+				break;
+			case 1:
+				document.getElementById("output").innerHTML = '';
+				console.log("IN GAME");
+				break;
+			case 3:
+				console.log("WINNER");
+				//var audio = new Audio('img/goodjob.mp3');
+				//audio.play();
+				var vid = document.getElementById("goodJobSound");
+				vid.play();
+				document.getElementById("output").innerHTML = '<h2>GOOD JOB</h2><h3>NOW REMOVE ALL CARDS!</h3>' //I changed this line...!!!!!
+				break;
+		} //end switch
+		
+		// set new state
+		system_state = newSystemState;
+	} //end function
+	
+	
+	// ********************************************************
+	//  DRAW WORD LETTES
+	// ********************************************************
+	function draw_word_letters() {
+		var innerHTMLA = '';
+		var backgroundColor = '';
+		
+		for (var i=0; i < currentQ.length; i++) {
+			if (currentA[i] == ' ') {
+				backgroundColor = 'gray';
+			} else if (currentA[i] == currentQ[i]) {
+				backgroundColor = 'green';
+			} else {
+				backgroundColor = 'red';
+			} //end if 
+		
+			innerHTMLA += '<div  class="letter_cont" style="color:' + backgroundColor + ';">';//I changed this line...!!!!!
+			if (currentA[i] == ' ') {
+				innerHTMLA += '&nbsp';
+			} else {
+				innerHTMLA += currentA[i];
+			}
+			innerHTMLA += '</div>';
+		}
+		document.getElementById("answer").innerHTML = innerHTMLA;
+	}
+	
+	
+	
+
+	
+	// ********************************************************
+	//  Get new word 
+	// ********************************************************
+	function getNewWord() { connection.send('#n'); }
+	
+</script>
+
+</div>
+</body>
+</html>

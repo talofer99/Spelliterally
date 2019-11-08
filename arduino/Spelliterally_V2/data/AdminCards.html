@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>SPELLITERALLY 1.0 - CARDS ADMIN</title>
+	<link rel="stylesheet" type="text/css" href="/css/style.css" />
+</head>
+<body>
+
+<div class="container">
+
+	<div class="game_name">
+		<h1>SPELLITERALLY 1.0</h1>
+	</div>
+
+	<div class="new_board">
+		<div style="padding-right:10px;"><a href="/Admin.html"><img src="/img/back.png"></a></div>
+		<h2>CARDS ADMIN</h2>
+	</div>
+	<div class="new_board">
+		<div id="letter" style="padding-right:15px;"><span>Place/Remove card</span></div>
+		<div id="action"></div>
+	</div>
+	<div class="new_board">
+		<div id="backup" style="margin-top: 30px">
+			<span>Download <a href="/settings/cards.txt" download>cards.txt</a> file.</span>
+		</div>
+	</div>
+	<div class="new_board">
+		<div id="backup" style="margin-top: 10px">
+			<label>Upload data</label>
+			<form method="post" enctype="multipart/form-data" action="/restoreCards">
+				<input type="file" name="name">
+				<input class="button" type="submit" value="Upload">
+			</form>
+			
+			<span>* make sure the file name is cards.txt</span>
+		</div>
+	</div>
+<script>
+	var card_state = -1;
+	var last_letter = "";
+	
+	// ********************************************************
+	//  WEB SOCKET
+	// ********************************************************
+	var connection = new WebSocket('ws://'+location.hostname+'/ws', ['arduino']);
+	// on open
+	connection.onopen = function () {  connection.send('admin'); }; 
+	// on error
+	connection.onerror = function (error) {    console.log('WebSocket Error ', error);};
+
+	// on message 
+	connection.onmessage = function (e){
+	
+		//parse json
+		jsonObj = JSON.parse(e.data);
+		console.log('Server: ', jsonObj);
+				
+		if (jsonObj.card_state != card_state) {
+			switch (jsonObj.card_state) {
+				case 0:
+					console.log("NO CARD");
+					document.getElementById("letter").innerHTML = "NO CARD";
+					document.getElementById("action").innerHTML = ""
+					
+					break;
+				case 1:
+					console.log("Known card");
+					document.getElementById("letter").innerHTML = jsonObj.letter;
+					document.getElementById("action").innerHTML = draw_ui('Update')
+
+					break;
+				case 2:
+					document.getElementById("letter").innerHTML = "-NEW-";
+					document.getElementById("action").innerHTML = draw_ui('Add')
+					console.log("New card");
+					break;
+			
+			} //end switch
+			
+			// set new state
+			card_state = jsonObj.card_state;
+		} //end if 
+	
+		// on letter change !!!
+		if (last_letter != jsonObj.letter && jsonObj.card_state == 1) {
+			document.getElementById("letter").innerHTML = jsonObj.letter;
+		} //end if 
+	};
+	
+	// ********************************************************
+	
+	function draw_ui(type) {
+		var html = '<select id="letterDD" name="test"><option value="0">Select Letter</option>'
+		for (var i=65; i <=90; i++) {
+			html += '<option>' + String.fromCharCode(i) + '</option>';
+		}
+		
+		html +='</select>';
+		html += '<button onClick="sendToServer(\'' + type + '\')">' + type + '</button>';
+		return html
+	}
+
+	
+	// ********************************************************
+	//  Get new word 
+	// ********************************************************
+	function sendToServer(type) { 
+		if (document.getElementById("letterDD").value == '0') {
+			alert('please select a letter');
+		} else {
+			connection.send('#s' + document.getElementById("letterDD").value); 
+		} //end if 
+	}
+	
+</script>
+</div>
+</body>
+</html>
