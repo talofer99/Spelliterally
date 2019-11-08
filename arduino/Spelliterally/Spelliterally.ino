@@ -10,6 +10,7 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
 #include <ESP8266mDNS.h>
 #include "secrets.h"
 
@@ -50,16 +51,22 @@ File fsUploadFile;              // a File object to temporarily store the receiv
 void setup(void) {
   Serial.begin(115200);
 
-  //Connect to your WiFi router
-  WiFi.begin(ssid, password);
-  Serial.print(F("Connecting"));
+  //Local intialization. Once its business is done, there is no need to keep it around
+  WiFiManager wifiManager;
+  //and goes into a blocking loop awaiting configuration
+  //wifiManager.resetSettings();
+  wifiManager.autoConnect("AutoConnectAP");
 
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(F("."));
-  }
-  Serial.println(F("Done"));
+  //Connect to your WiFi router
+  //  WiFi.begin(ssid, password);
+  //  Serial.print(F("Connecting"));
+  //
+  //  // Wait for connection
+  //  while (WiFi.status() != WL_CONNECTED) {
+  //    delay(500);
+  //    Serial.print(F("."));
+  //  }
+  //  Serial.println(F("Done"));
 
   //Initialize File System
   if (SPIFFS.begin())  {
@@ -87,10 +94,10 @@ void setup(void) {
   }, handleFileUpload);
   server.serveStatic("/AdminWords.html", SPIFFS, "/AdminWords.html");
   server.serveStatic("/spell.json", SPIFFS, "/settings/spell.json");
-   server.on("/restoreSpell", HTTP_POST, []() {
+  server.on("/restoreSpell", HTTP_POST, []() {
     server.send(200);
   }, handleFileUpload);
-  
+
   server.serveStatic("/img", SPIFFS, "/img");
   server.serveStatic("/css", SPIFFS, "/css");
   server.serveStatic("/js", SPIFFS, "/js");
@@ -105,6 +112,9 @@ void setup(void) {
     Serial.print(host);
     Serial.println(F(".local"));
   }
+
+  // Add service to MDNS-SD
+  MDNS.addService("http", "tcp", 80);
 
   // setup rfid pins
   setup_rfid_pins();
@@ -136,7 +146,7 @@ void setup(void) {
 void loop(void) {
   //Handle client requests
   server.handleClient();
-  //MDNS.update();
+  MDNS.update();
   WS_loop();
 
   switch (systemState) {
@@ -220,13 +230,13 @@ void handleFileUpload() { // upload a new file to the SPIFFS
         setUpLetterList();
         server.sendHeader("Location", "/AdminCards.html");     // Redirect the client to the success page
         server.send(303);
-      } 
+      }
       else if (server.uri() ==  "/restoreSpell") {
         setUpWordList();
         server.sendHeader("Location", "/AdminWords.html");     // Redirect the client to the success page
         server.send(303);
       }
-      else 
+      else
       {
         Serial.println(F("UPLOADED FROM UNKNOWN SOURCE !!!!!"));
       }
